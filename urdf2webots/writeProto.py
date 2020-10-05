@@ -280,6 +280,14 @@ def URDFBoundingObject(proto, link, level, boxCollision):
             proto.write((boundingLevel + 1) * indent + ']\n')
             proto.write(boundingLevel * indent + '}\n')
 
+            # workaround for heavy bounding box duplication
+            if boundingObject.geometry.trimeshFile:
+                if boundingLevel == level + 4:
+                    proto.write((level + 3) * indent + ']\n')
+                    proto.write((level + 2) * indent + '}\n')
+                    boundingLevel = level + 2
+                break
+
         elif boundingObject.geometry.trimesh.coord:
             if boundingObject.geometry.defName is not None:
                 proto.write(initialIndent + 'USE %s\n' % boundingObject.geometry.defName)
