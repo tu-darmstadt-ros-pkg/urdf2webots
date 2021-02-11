@@ -186,6 +186,7 @@ class Dynamics():
     def __init__(self):
         """Initializatization."""
         self.damping = 0.0
+        self.spring = 0.0
         self.friction = 0.0
 
 
@@ -908,6 +909,8 @@ def getDynamics(node):
     dynamicsElement = node.getElementsByTagName('dynamics')[0]
     if dynamicsElement.getAttribute('damping'):
         dynamics.damping = float(dynamicsElement.getAttribute('damping'))
+    if dynamicsElement.getAttribute('spring_constant'):
+        dynamics.spring = float(dynamicsElement.getAttribute('spring'))
     if dynamicsElement.getAttribute('friction'):
         dynamics.friction = float(dynamicsElement.getAttribute('friction'))
     return dynamics
