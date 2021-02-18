@@ -30,7 +30,7 @@ robotName = ''
 disableMeshOptimization = False
 
 
-class Trimesh():
+class Trimesh:
     """Define triangular mesh object."""
 
     def __init__(self):
@@ -43,7 +43,7 @@ class Trimesh():
         self.normalIndex = []  # list of index of normals
 
 
-class Inertia():
+class Inertia:
     """Define inertia object."""
 
     def __init__(self):
@@ -59,7 +59,7 @@ class Inertia():
         self.izz = 1.0
 
 
-class Box():
+class Box:
     """Define box object."""
 
     def __init__(self):
@@ -69,7 +69,7 @@ class Box():
         self.z = 0.0
 
 
-class Cylinder():
+class Cylinder:
     """Define cylinder object."""
 
     def __init__(self):
@@ -78,7 +78,7 @@ class Cylinder():
         self.length = 0.0
 
 
-class Sphere():
+class Sphere:
     """Define sphere object."""
 
     def __init__(self):
@@ -86,7 +86,7 @@ class Sphere():
         self.radius = 0.0
 
 
-class Geometry():
+class Geometry:
     """Define geometry object."""
 
     reference = {}
@@ -103,7 +103,7 @@ class Geometry():
         self.lineset = False
 
 
-class Color():
+class Color:
     """Define color object."""
 
     def __init__(self, red=0.5, green=0.0, blue=0.0, alpha=1.0):
@@ -114,7 +114,7 @@ class Color():
         self.alpha = alpha
 
 
-class Material():
+class Material:
     """Define material object."""
 
     namedMaterial = {}
@@ -148,7 +148,7 @@ class Material():
                 assert False
 
 
-class Visual():
+class Visual:
     """Define visual object."""
 
     def __init__(self):
@@ -159,7 +159,7 @@ class Visual():
         self.material = Material()
 
 
-class Collision():
+class Collision:
     """Define collision object."""
 
     def __init__(self):
@@ -169,7 +169,7 @@ class Collision():
         self.geometry = Geometry()
 
 
-class Calibration():
+class Calibration:
     """Define calibration object."""
 
     def __init__(self):
@@ -178,6 +178,7 @@ class Calibration():
         self.rising = True
 
 
+# noinspection PyRedundantParentheses
 class Dynamics():
     """Define dynamics object."""
 
@@ -187,7 +188,7 @@ class Dynamics():
         self.friction = 0.0
 
 
-class Limit():
+class Limit:
     """Define joint limit object."""
 
     def __init__(self):
@@ -198,7 +199,7 @@ class Limit():
         self.velocity = 0.0
 
 
-class Safety():
+class Safety:
     """Define joint safety object."""
 
     def __init__(self):
@@ -209,7 +210,7 @@ class Safety():
         self.kVelocity = 0.0
 
 
-class Link():
+class Link:
     """Define link object."""
 
     def __init__(self):
@@ -219,8 +220,7 @@ class Link():
         self.visual = []
         self.collision = []
 
-
-class Joint():
+class Joint:
     """Define joint object."""
 
     def __init__(self):
@@ -238,7 +238,7 @@ class Joint():
         self.safety = Safety()
 
 
-class IMU():
+class IMU:
     """Define an IMU sensor."""
 
     list = []
@@ -272,23 +272,28 @@ class IMU():
         file.write(indentationLevel * indent + '}\n')
 
 
-class Camera():
+class Camera:
     """Define a camera sensor."""
+    #  RangeFinder is almost like camera "type = depth"
+    # camera 180  spherical = TRUE and properties
 
     list = []
 
     def __init__(self):
         """Initializatization."""
+        self.instance = 'Camera'
         self.name = 'camera'
         self.fov = None
         self.width = None
         self.height = None
+        self.spherical = "FALSE"
         self.noise = None
+
 
     def export(self, file, indentationLevel):
         """Export this camera."""
         indent = '  '
-        file.write(indentationLevel * indent + 'Camera {\n')
+        file.write(indentationLevel * indent + '  %s {\n' % self.instance)
         file.write(indentationLevel * indent + '  name "%s"\n' % self.name)
         if self.fov:
             file.write(indentationLevel * indent + '  fieldOfView %lf\n' % self.fov)
@@ -296,12 +301,14 @@ class Camera():
             file.write(indentationLevel * indent + '  width %d\n' % self.width)
         if self.height:
             file.write(indentationLevel * indent + '  height %d\n' % self.height)
+        if self.spherical:
+            file.write(indentationLevel * indent + '  spherical %s\n' % self.spherical)
         if self.noise:
             file.write(indentationLevel * indent + '  noise %lf\n' % self.noise)
         file.write(indentationLevel * indent + '}\n')
 
 
-class Lidar():
+class Lidar:
     """Define a lidar sensor."""
 
     list = []
@@ -452,7 +459,7 @@ def getOBJMesh(filename, node, link):
                 collision.position = node.position
                 collision.rotation = node.rotation
                 collision.geometry.scale = node.geometry.scale
-                extSring = '_%d' % (counter) if counter != 0 else ''
+                extSring = '_%d' % counter if counter != 0 else ''
                 collision.geometry.name = '%s%s' % (os.path.splitext(os.path.basename(filename))[0], extSring)
                 counter += 1
             elif header == 'f':  # face
@@ -919,12 +926,32 @@ def isRootLink(link, childList):
         if link == child:
             return False
     return True
+# Author: Denis Andric
+# somehow searching for the reference in the linkList was broken,
+# so I will use classical primitive solution
+def checkLink(linkList, link):
+
+    #  print("There are:")
+    #  print(len(linkList))
+    for a in linkList:
+        if link == a.name:
+            return True
+            break
+    return False
+
+
+
+
+
+
+
 
 
 def parseGazeboElement(element, parentLink, linkList):
     """Parse a Gazebo element."""
     for plugin in element.getElementsByTagName('plugin'):
-        if plugin.hasAttribute('filename') and plugin.getAttribute('filename').startswith('libgazebo_ros_imu'):
+        if plugin.hasAttribute('filename') and (plugin.getAttribute('filename').startswith('libgazebo_ros_imu')
+               or plugin.getAttribute('filename').startswith('libhector_gazebo_ros_imu')): # we working with hector there need to be more supported types Denis Andric
             imu = IMU()
             imu.parentLink = parentLink
             if hasElement(plugin, 'topicName'):
@@ -934,10 +961,13 @@ def parseGazeboElement(element, parentLink, linkList):
             IMU.list.append(imu)
     for sensorElement in element.getElementsByTagName('sensor'):
         sensorElement = element.getElementsByTagName('sensor')[0]
+        # normal camera
         if sensorElement.getAttribute('type') == 'camera':
             camera = Camera()
             camera.parentLink = parentLink
-            if element.hasAttribute('reference') and element.getAttribute('reference') in linkList:
+            # this if statement is somehow wrong
+            # if element.hasAttribute('reference') and element.getAttribute('reference') in linkList:
+            if element.hasAttribute('reference') and checkLink(linkList, element.getAttribute('reference')):
                 camera.parentLink = element.getAttribute('reference')
             camera.name = sensorElement.getAttribute('name')
             if hasElement(sensorElement, 'camera'):
@@ -959,10 +989,71 @@ def parseGazeboElement(element, parentLink, linkList):
                 if hasElement(noiseElement, 'stddev'):
                     camera.noise = float(noiseElement.getElementsByTagName('stddev')[0].firstChild.nodeValue)
             Camera.list.append(camera)
+            #fish eye
+        elif sensorElement.getAttribute('type') == 'wideanglecamera':
+            camera = Camera()
+            camera.spherical = "TRUE"
+            camera.parentLink = parentLink
+            # this if statement is somehow wrong
+            # if element.hasAttribute('reference') and element.getAttribute('reference') in linkList:
+            if element.hasAttribute('reference') and checkLink(linkList, element.getAttribute('reference')):
+                camera.parentLink = element.getAttribute('reference')
+            camera.name = sensorElement.getAttribute('name')
+            if hasElement(sensorElement, 'camera'):
+                cameraElement = sensorElement.getElementsByTagName('camera')[0]
+                if hasElement(cameraElement, 'horizontal_fov'):
+                    camera.fov = float(cameraElement.getElementsByTagName('horizontal_fov')[0].firstChild.nodeValue)
+                if hasElement(cameraElement, 'image'):
+                    imageElement = cameraElement.getElementsByTagName('image')[0]
+                    if hasElement(imageElement, 'width'):
+                        camera.width = int(imageElement.getElementsByTagName('width')[0].firstChild.nodeValue)
+                    if hasElement(imageElement, 'height'):
+                        camera.height = int(imageElement.getElementsByTagName('height')[0].firstChild.nodeValue)
+                    if hasElement(imageElement, 'format') \
+                            and imageElement.getElementsByTagName('format')[0].firstChild.nodeValue != 'R8G8B8A8':
+                        print('Unsupported "%s" image format, using "R8G8B8A8" instead.' %
+                                str(imageElement.getElementsByTagName('format')[0].firstChild.nodeValue))
+            if hasElement(sensorElement, 'noise'):
+                noiseElement = sensorElement.getElementsByTagName('noise')[0]
+                if hasElement(noiseElement, 'stddev'):
+                    camera.noise = float(noiseElement.getElementsByTagName('stddev')[0].firstChild.nodeValue)
+            Camera.list.append(camera)
+        #rangefinder, almost like camera
+        elif sensorElement.getAttribute('type') == 'depth':
+            camera = Camera()
+            camera.instance = 'RangeFinder'
+            camera.parentLink = parentLink
+            # this if statement is somehow wrong
+            # if element.hasAttribute('reference') and element.getAttribute('reference') in linkList:
+            if element.hasAttribute('reference') and checkLink(linkList, element.getAttribute('reference')):
+                camera.parentLink = element.getAttribute('reference')
+            camera.name = sensorElement.getAttribute('name')
+            if hasElement(sensorElement, 'camera'):
+                cameraElement = sensorElement.getElementsByTagName('camera')[0]
+                if hasElement(cameraElement, 'horizontal_fov'):
+                    camera.fov = float(cameraElement.getElementsByTagName('horizontal_fov')[0].firstChild.nodeValue)
+                if hasElement(cameraElement, 'image'):
+                    imageElement = cameraElement.getElementsByTagName('image')[0]
+                    if hasElement(imageElement, 'width'):
+                        camera.width = int(imageElement.getElementsByTagName('width')[0].firstChild.nodeValue)
+                    if hasElement(imageElement, 'height'):
+                        camera.height = int(imageElement.getElementsByTagName('height')[0].firstChild.nodeValue)
+                    if hasElement(imageElement, 'format') \
+                            and imageElement.getElementsByTagName('format')[0].firstChild.nodeValue != 'R8G8B8A8':
+                        print('Unsupported "%s" image format, using "R8G8B8A8" instead.' %
+                                str(imageElement.getElementsByTagName('format')[0].firstChild.nodeValue))
+            if hasElement(sensorElement, 'noise'):
+                noiseElement = sensorElement.getElementsByTagName('noise')[0]
+                if hasElement(noiseElement, 'stddev'):
+                    camera.noise = float(noiseElement.getElementsByTagName('stddev')[0].firstChild.nodeValue)
+            Camera.list.append(camera)
+        # lidar
         elif sensorElement.getAttribute('type') == 'ray':
             lidar = Lidar()
             lidar.parentLink = parentLink
-            if element.hasAttribute('reference') and element.getAttribute('reference') in linkList:
+            # this if statement is somehow wrong
+            # if element.hasAttribute('reference') and element.getAttribute('reference') in linkList:
+            if element.hasAttribute('reference') and checkLink(linkList, element.getAttribute('reference')):
                 lidar.parentLink = element.getAttribute('reference')
             lidar.name = sensorElement.getAttribute('name')
             if hasElement(sensorElement, 'ray'):
