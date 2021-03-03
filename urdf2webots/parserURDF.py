@@ -3,6 +3,8 @@ import os
 import sys
 import struct
 import numpy
+
+debug_i = 0
 try:
     from PIL import Image
 except ImportError as e:
@@ -216,9 +218,12 @@ class Link:
     def __init__(self):
         """Initializatization."""
         self.name = 'default'
+        self.proto_type = 'default'
         self.inertia = Inertia()
         self.visual = []
         self.collision = []
+
+
 
 class Joint:
     """Define joint object."""
@@ -227,6 +232,7 @@ class Joint:
         """Initializatization."""
         self.name = 'default'
         self.type = 'default'
+        self.proto_type = 'default'
         self.position = [0.0, 0.0, 0.0]
         self.rotation = [1.0, 0.0, 0.0, 0.0]
         self.parent = 'default'
@@ -295,6 +301,8 @@ class Camera:
         indent = '  '
         file.write(indentationLevel * indent + '  %s {\n' % self.instance)
         file.write(indentationLevel * indent + '  name "%s"\n' % self.name)
+        file.write(indentationLevel * indent + '  rotation 0.57735 -0.57735 -0.57735 2.0944\n')
+
         if self.fov:
             file.write(indentationLevel * indent + '  fieldOfView %lf\n' % self.fov)
         if self.width:
@@ -733,7 +741,7 @@ def getVisual(link, node, path):
             if meshfile.count('package'):
                 idx0 = meshfile.find('package://')
                 meshfile = meshfile[idx0 + len('package://'):]
-            if geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale'):
+            if geometryElement.getElementsByTagName('mesh')[0].hasAttribute('scale'):
                 meshScale = geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale').split()
                 visual.geometry.scale[0] = float(meshScale[0])
                 visual.geometry.scale[1] = float(meshScale[1])
@@ -791,11 +799,14 @@ def getCollision(link, node, path):
         elif hasElement(geometryElement, 'mesh'):
             meshfile = os.path.normpath(os.path.join(path,
                                                      geometryElement.getElementsByTagName('mesh')[0].getAttribute('filename')))
-            if geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale'):
+            if geometryElement.getElementsByTagName('mesh')[0].hasAttribute('scale'):
                 meshScale = geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale').split()
+
                 collision.geometry.scale[0] = float(meshScale[0])
                 collision.geometry.scale[1] = float(meshScale[1])
                 collision.geometry.scale[2] = float(meshScale[2])
+                print("getCollision")
+                print(geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale'))
             # hack for gazebo mesh database
             if meshfile.count('package'):
                 idx0 = meshfile.find('package://')
@@ -884,6 +895,9 @@ def getLink(node, path):
     """Parse a link."""
     link = Link()
     link.name = node.getAttribute('name')
+    link.proto_type = node.getAttribute('proto_type')
+    print("")
+    print(link.proto_type)
     if hasElement(node, 'inertial'):
         link.inertia = getInertia(node)
     if hasElement(node, 'visual'):
@@ -900,6 +914,8 @@ def getJoint(node):
     joint = Joint()
     joint.name = node.getAttribute('name')
     joint.type = node.getAttribute('type')
+
+
     if hasElement(node, 'origin'):
         if node.getElementsByTagName('origin')[0].getAttribute('xyz'):
             joint.position = getPosition(node)

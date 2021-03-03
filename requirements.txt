@@ -1,3 +1,6 @@
 pycollada==0.6
-Pillow
-rospkg
+Pillow~=7.0.0
+rospkg~=1.2.9
+
+setuptools~=45.2.0
+numpy~=1.17.4

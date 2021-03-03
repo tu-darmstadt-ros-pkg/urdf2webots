@@ -81,6 +81,7 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
              jointPosition=[0.0, 0.0, 0.0], jointRotation=[1.0, 0.0, 0.0, 0.0],
              boxCollision=False, normal=False, dummy=False, robot=False, endpoint=False):
     """Write a link iteratively."""
+
     indent = '  '
     haveChild = False
     if robot:
@@ -94,7 +95,10 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
         proto.write((level + 1) * indent + 'synchronization IS synchronization\n')
         proto.write((level + 1) * indent + 'selfCollision IS selfCollision\n')
     else:
-        proto.write((' ' if endpoint else level * indent) + 'Solid {\n')
+        if link.proto_type == "Track":
+            proto.write((' ' if endpoint else level * indent) + 'Track {\n')
+        else:
+            proto.write((' ' if endpoint else level * indent) + 'Solid {\n')
         proto.write((level + 1) * indent + 'translation %lf %lf %lf\n' % (jointPosition[0],
                                                                           jointPosition[1],
                                                                           jointPosition[2]))
@@ -102,6 +106,7 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
                                                                            jointRotation[1],
                                                                            jointRotation[2],
                                                                            jointRotation[3]))
+
     if not dummy:  # dummy: case when link not defined but referenced (e.g. Atlas robot)
         # 1: export Shapes
         if link.visual:
@@ -111,7 +116,8 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
             URDFShape(proto, link, level + 2, normal)
         # 2: export Sensors
         for sensor in sensorList:
-            if sensor.parentLink == link.name:
+           # print(sensor.parentLink)
+            if sensor.parentLink == link.name:   #
                 if not haveChild:
                     haveChild = True
                     proto.write((level + 1) * indent + 'children [\n')
@@ -158,6 +164,9 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
                 proto.write((level + 2) * indent + 'centerOfMass [ %lf %lf %lf ]\n' % (link.inertia.position[0],
                                                                                        link.inertia.position[1],
                                                                                        link.inertia.position[2]))
+            else:
+               proto.write((level + 2) * indent + 'centerOfMass [ 0.0 0.0 0.0 ]\n')  # Denis Andric
+
             if link.inertia.ixx > 0.0 and link.inertia.iyy > 0.0 and link.inertia.izz > 0.0:
                 i = link.inertia
                 inertiaMatrix = [i.ixx, i.ixy, i.ixz, i.ixy, i.iyy, i.iyz, i.ixz, i.iyz, i.izz]
@@ -187,6 +196,13 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
             proto.write((level + 1) * indent + '}\n')
             if level == 1 and staticBase:
                 proto.write((level + 1) * indent + '%{ end }%\n')
+    if link.proto_type == "Track":
+        proto.write((level + 1) * indent + 'contactMaterial "track material"\n')
+        proto.write((level + 1) * indent + 'device [\n')
+        proto.write((level + 2) * indent + 'LinearMotor {\n')
+        proto.write((level + 3) * indent + 'name "' + link.name + '_motor"\n')
+        proto.write((level + 2) * indent + '}\n')
+        proto.write((level + 1) * indent + ']\n')
     proto.write(level * indent + '}\n')
 
 
@@ -245,6 +261,7 @@ def URDFBoundingObject(proto, link, level, boxCollision):
                             'z': float('-inf')}
             }
             for value in boundingObject.geometry.trimesh.coord:
+
                 x = value[0] * boundingObject.geometry.scale[0]
                 y = value[1] * boundingObject.geometry.scale[1]
                 z = value[2] * boundingObject.geometry.scale[2]
@@ -254,7 +271,10 @@ def URDFBoundingObject(proto, link, level, boxCollision):
                 aabb['maximum']['y'] = max(aabb['maximum']['y'], y)
                 aabb['minimum']['z'] = min(aabb['minimum']['z'], z)
                 aabb['maximum']['z'] = max(aabb['maximum']['z'], z)
-
+            if any(x < 0 for x in boundingObject.geometry.scale):
+                print("")
+                print("from BO_COORD")
+                print(link.name)
             proto.write(initialIndent + 'Transform {\n')
             proto.write((boundingLevel + 1) * indent + 'translation %f %f %f\n' % (
                         0.5 * (aabb['maximum']['x'] + aabb['minimum']['x']) + boundingObject.position[0],
@@ -287,9 +307,15 @@ def URDFBoundingObject(proto, link, level, boxCollision):
                 proto.write((boundingLevel + 1) * indent + 'coord Coordinate {\n')
                 proto.write((boundingLevel + 2) * indent + 'point [\n' + (boundingLevel + 3) * indent)
                 for value in boundingObject.geometry.trimesh.coord:
+
+
                     proto.write('%lf %lf %lf, ' % (value[0] * boundingObject.geometry.scale[0],
                                                    value[1] * boundingObject.geometry.scale[1],
                                                    value[2] * boundingObject.geometry.scale[2]))
+                if any(x < 0 for x in boundingObject.geometry.scale):
+                    print("")
+                    print("FROM BO_TRIMESH")
+                    print(link.name)
                 proto.write('\n' + (boundingLevel + 2) * indent + ']\n')
                 proto.write((boundingLevel + 1) * indent + '}\n')
 
@@ -335,7 +361,6 @@ def URDFVisual(proto, visualNode, level, normal=False):
     """Write a Visual."""
     indent = '  '
     shapeLevel = level
-
     proto.write(shapeLevel * indent + 'Shape {\n')
     if visualNode.material.defName is not None:
         proto.write((shapeLevel + 1) * indent + 'appearance USE %s\n' % visualNode.material.defName)
@@ -405,6 +430,10 @@ def URDFVisual(proto, visualNode, level, normal=False):
                 proto.write('%lf %lf %lf, ' % (value[0] * visualNode.geometry.scale[0],
                                                value[1] * visualNode.geometry.scale[1],
                                                value[2] * visualNode.geometry.scale[2]))
+            if any(x < 0 for x in visualNode.geometry.scale):
+                print("")
+                print(visualNode.geometry.name)
+                print("FROM VISUAL TRIMESH")
             proto.write('\n' + (shapeLevel + 3) * indent + ']\n')
             proto.write((shapeLevel + 2) * indent + '}\n')
 
@@ -483,8 +512,8 @@ def URDFShape(proto, link, level, normal=False):
     indent = '  '
     shapeLevel = level
     transform = False
-
     for visualNode in link.visual:
+
         if visualNode.position != [0.0, 0.0, 0.0] or visualNode.rotation[3] != 0:
             proto.write(shapeLevel * indent + 'Transform {\n')
             proto.write((shapeLevel + 1) * indent + 'translation %lf %lf %lf\n' % (visualNode.position[0],
@@ -582,6 +611,7 @@ def URDFJoint(proto, joint, level, parentList, childList, linkList, jointList,
     elif joint.type == 'fixed':
         for childLink in linkList:
             if childLink.name == joint.child:
+
                 URDFLink(proto, childLink, level, parentList, childList,
                          linkList, jointList, sensorList, joint.position, joint.rotation,
                          boxCollision, normal)
