@@ -301,7 +301,7 @@ class Camera:
         indent = '  '
         file.write(indentationLevel * indent + '  %s {\n' % self.instance)
         file.write(indentationLevel * indent + '  name "%s"\n' % self.name)
-        file.write(indentationLevel * indent + '  rotation 0.57735 -0.57735 -0.57735 2.0944\n')
+        file.write(indentationLevel * indent + '  rotation 0.57735 -0.57735 -0.57735 2.0944\n') # blue arrow backward view
 
         if self.fov:
             file.write(indentationLevel * indent + '  fieldOfView %lf\n' % self.fov)
@@ -746,6 +746,13 @@ def getVisual(link, node, path):
                 visual.geometry.scale[0] = float(meshScale[0])
                 visual.geometry.scale[1] = float(meshScale[1])
                 visual.geometry.scale[2] = float(meshScale[2])
+            if any(x < 0 for x in visual.geometry.scale):
+
+                print("NEGATION parser")
+
+                print("getVisual")
+                print(visual.geometry.scale)
+                print(geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale'))
             extension = os.path.splitext(meshfile)[1].lower()
             if extension == '.dae':
                 getColladaMesh(meshfile, visual, link)
@@ -753,6 +760,7 @@ def getVisual(link, node, path):
                 getOBJMesh(meshfile, visual, link)
             elif extension == '.stl':
                 name = os.path.splitext(os.path.basename(meshfile))[0]
+                print(name)
                 if name in Geometry.reference:
                     visual.geometry = Geometry.reference[name]
                 else:
@@ -805,8 +813,12 @@ def getCollision(link, node, path):
                 collision.geometry.scale[0] = float(meshScale[0])
                 collision.geometry.scale[1] = float(meshScale[1])
                 collision.geometry.scale[2] = float(meshScale[2])
-                print("getCollision")
-                print(geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale'))
+                if any(x < 0 for x in collision.geometry.scale):
+                    print("NEGATION parser")
+                    print(link.name)
+                    print("getCollision")
+                    print(collision.geometry.scale)
+                    print(geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale'))
             # hack for gazebo mesh database
             if meshfile.count('package'):
                 idx0 = meshfile.find('package://')

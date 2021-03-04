@@ -271,10 +271,7 @@ def URDFBoundingObject(proto, link, level, boxCollision):
                 aabb['maximum']['y'] = max(aabb['maximum']['y'], y)
                 aabb['minimum']['z'] = min(aabb['minimum']['z'], z)
                 aabb['maximum']['z'] = max(aabb['maximum']['z'], z)
-            if any(x < 0 for x in boundingObject.geometry.scale):
-                print("")
-                print("from BO_COORD")
-                print(link.name)
+
             proto.write(initialIndent + 'Transform {\n')
             proto.write((boundingLevel + 1) * indent + 'translation %f %f %f\n' % (
                         0.5 * (aabb['maximum']['x'] + aabb['minimum']['x']) + boundingObject.position[0],
@@ -312,10 +309,9 @@ def URDFBoundingObject(proto, link, level, boxCollision):
                     proto.write('%lf %lf %lf, ' % (value[0] * boundingObject.geometry.scale[0],
                                                    value[1] * boundingObject.geometry.scale[1],
                                                    value[2] * boundingObject.geometry.scale[2]))
-                if any(x < 0 for x in boundingObject.geometry.scale):
-                    print("")
-                    print("FROM BO_TRIMESH")
-                    print(link.name)
+                print("write Proto boundingObject")
+                print(link.name)
+                print(boundingObject.geometry.scale)
                 proto.write('\n' + (boundingLevel + 2) * indent + ']\n')
                 proto.write((boundingLevel + 1) * indent + '}\n')
 
@@ -430,10 +426,10 @@ def URDFVisual(proto, visualNode, level, normal=False):
                 proto.write('%lf %lf %lf, ' % (value[0] * visualNode.geometry.scale[0],
                                                value[1] * visualNode.geometry.scale[1],
                                                value[2] * visualNode.geometry.scale[2]))
-            if any(x < 0 for x in visualNode.geometry.scale):
-                print("")
-                print(visualNode.geometry.name)
-                print("FROM VISUAL TRIMESH")
+            print("write Proto visual node")
+            print(visualNode.geometry.name)
+            print(visualNode.geometry.scale)
+
             proto.write('\n' + (shapeLevel + 3) * indent + ']\n')
             proto.write((shapeLevel + 2) * indent + '}\n')
 
