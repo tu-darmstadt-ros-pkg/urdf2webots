@@ -301,7 +301,7 @@ class Camera:
         indent = '  '
         file.write(indentationLevel * indent + '  %s {\n' % self.instance)
         file.write(indentationLevel * indent + '  name "%s"\n' % self.name)
-        file.write(indentationLevel * indent + '  rotation 0.57735 -0.57735 -0.57735 2.0944\n') # blue arrow backward view
+        file.write(indentationLevel * indent + '  rotation 0.577350269 -0.577350269 -0.577350269 2.0943951 \n') # blue arrow backward view
 
         if self.fov:
             file.write(indentationLevel * indent + '  fieldOfView %lf\n' % self.fov)
@@ -535,28 +535,31 @@ def getColladaMesh(filename, node, link):
                 name = '%s_%d' % (os.path.splitext(os.path.basename(filename))[0], index)
                 if type(data.original) is lineset.LineSet:
                     visual.geometry.lineset = True
-                if name in Geometry.reference:
-                    visual.geometry = Geometry.reference[name]
-                else:
-                    Geometry.reference[name] = visual.geometry
-                    visual.geometry.name = name
-                    visual.geometry.scale = node.geometry.scale
-                    for val in data.vertex:
-                        visual.geometry.trimesh.coord.append(numpy.array(val))
-                    for val in data.vertex_index:
-                        visual.geometry.trimesh.coordIndex.append(val)
-                    if data.texcoordset:  # non-empty
-                        for val in data.texcoordset[0]:
-                            visual.geometry.trimesh.texCoord.append(val)
-                    if data.texcoord_indexset:  # non-empty
-                        for val in data.texcoord_indexset[0]:
-                            visual.geometry.trimesh.texCoordIndex.append(val)
-                    if hasattr(data, '_normal') and data._normal is not None and data._normal.size > 0:
-                        for val in data._normal:
-                            visual.geometry.trimesh.normal.append(numpy.array(val))
-                        if hasattr(data, '_normal_index') and data._normal_index is not None and data._normal_index.size > 0:
-                            for val in data._normal_index:
-                                visual.geometry.trimesh.normalIndex.append(val)
+                i = 0
+                i_name = name
+                while i_name in Geometry.reference:
+                    i_name = name + str(i)
+                    i = i + 1
+                name = i_name
+                Geometry.reference[name] = visual.geometry
+                visual.geometry.name = name
+                visual.geometry.scale = node.geometry.scale
+                for val in data.vertex:
+                    visual.geometry.trimesh.coord.append(numpy.array(val))
+                for val in data.vertex_index:
+                    visual.geometry.trimesh.coordIndex.append(val)
+                if data.texcoordset:  # non-empty
+                    for val in data.texcoordset[0]:
+                        visual.geometry.trimesh.texCoord.append(val)
+                if data.texcoord_indexset:  # non-empty
+                    for val in data.texcoord_indexset[0]:
+                        visual.geometry.trimesh.texCoordIndex.append(val)
+                if hasattr(data, '_normal') and data._normal is not None and data._normal.size > 0:
+                    for val in data._normal:
+                        visual.geometry.trimesh.normal.append(numpy.array(val))
+                    if hasattr(data, '_normal_index') and data._normal_index is not None and data._normal_index.size > 0:
+                        for val in data._normal_index:
+                            visual.geometry.trimesh.normalIndex.append(val)
                 if data.material and data.material.effect:
                     if data.material.effect.emission:
                         visual.material.emission = colorVector2Instance(data.material.effect.emission)
@@ -746,13 +749,7 @@ def getVisual(link, node, path):
                 visual.geometry.scale[0] = float(meshScale[0])
                 visual.geometry.scale[1] = float(meshScale[1])
                 visual.geometry.scale[2] = float(meshScale[2])
-            if any(x < 0 for x in visual.geometry.scale):
 
-                print("NEGATION parser")
-
-                print("getVisual")
-                print(visual.geometry.scale)
-                print(geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale'))
             extension = os.path.splitext(meshfile)[1].lower()
             if extension == '.dae':
                 getColladaMesh(meshfile, visual, link)
@@ -760,14 +757,21 @@ def getVisual(link, node, path):
                 getOBJMesh(meshfile, visual, link)
             elif extension == '.stl':
                 name = os.path.splitext(os.path.basename(meshfile))[0]
-                print(name)
-                if name in Geometry.reference:
-                    visual.geometry = Geometry.reference[name]
-                else:
-                    if extension == '.stl':
-                        visual = getSTLMesh(meshfile, visual)
-                    visual.geometry.name = name
-                    Geometry.reference[name] = visual.geometry
+                #if name in Geometry.reference:
+                #    visual.geometry = Geometry.reference[name]
+                #    print("load old visual " + name)
+                #else:
+                i=0
+                i_name=name
+                while i_name in Geometry.reference:
+                    i_name = name + str(i)
+                    i = i+1
+                name = i_name
+                if extension == '.stl':
+                    visual = getSTLMesh(meshfile, visual)
+                    print("making visual "+ name)
+                visual.geometry.name = name
+                Geometry.reference[name] = visual.geometry
                 link.visual.append(visual)
             else:
                 print('Unsupported mesh format: \"' + extension + '\"')
@@ -813,12 +817,7 @@ def getCollision(link, node, path):
                 collision.geometry.scale[0] = float(meshScale[0])
                 collision.geometry.scale[1] = float(meshScale[1])
                 collision.geometry.scale[2] = float(meshScale[2])
-                if any(x < 0 for x in collision.geometry.scale):
-                    print("NEGATION parser")
-                    print(link.name)
-                    print("getCollision")
-                    print(collision.geometry.scale)
-                    print(geometryElement.getElementsByTagName('mesh')[0].getAttribute('scale'))
+
             # hack for gazebo mesh database
             if meshfile.count('package'):
                 idx0 = meshfile.find('package://')
@@ -829,11 +828,14 @@ def getCollision(link, node, path):
             elif extension == '.obj':
                 getOBJMesh(meshfile, collision, link)
             elif extension == '.stl':
+                ###fragen
                 name = os.path.splitext(os.path.basename(meshfile))[0]
                 if name in Geometry.reference:
+                    print("load old collision " + name)
                     collision.geometry = Geometry.reference[name]
                 else:
                     if extension == '.stl':
+                        print("making colision " + name)
                         collision.geometry.stl = getSTLMesh(meshfile, collision)
                     collision.geometry.name = name
                     Geometry.reference[name] = collision.geometry
@@ -908,8 +910,7 @@ def getLink(node, path):
     link = Link()
     link.name = node.getAttribute('name')
     link.proto_type = node.getAttribute('proto_type')
-    print("")
-    print(link.proto_type)
+
     if hasElement(node, 'inertial'):
         link.inertia = getInertia(node)
     if hasElement(node, 'visual'):

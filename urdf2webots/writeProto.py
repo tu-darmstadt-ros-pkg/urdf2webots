@@ -164,8 +164,6 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
                 proto.write((level + 2) * indent + 'centerOfMass [ %lf %lf %lf ]\n' % (link.inertia.position[0],
                                                                                        link.inertia.position[1],
                                                                                        link.inertia.position[2]))
-            else:
-               proto.write((level + 2) * indent + 'centerOfMass [ 0.0 0.0 0.0 ]\n')  # Denis Andric
 
             if link.inertia.ixx > 0.0 and link.inertia.iyy > 0.0 and link.inertia.izz > 0.0:
                 i = link.inertia
@@ -309,9 +307,7 @@ def URDFBoundingObject(proto, link, level, boxCollision):
                     proto.write('%lf %lf %lf, ' % (value[0] * boundingObject.geometry.scale[0],
                                                    value[1] * boundingObject.geometry.scale[1],
                                                    value[2] * boundingObject.geometry.scale[2]))
-                print("write Proto boundingObject")
-                print(link.name)
-                print(boundingObject.geometry.scale)
+
                 proto.write('\n' + (boundingLevel + 2) * indent + ']\n')
                 proto.write((boundingLevel + 1) * indent + '}\n')
 
@@ -426,9 +422,7 @@ def URDFVisual(proto, visualNode, level, normal=False):
                 proto.write('%lf %lf %lf, ' % (value[0] * visualNode.geometry.scale[0],
                                                value[1] * visualNode.geometry.scale[1],
                                                value[2] * visualNode.geometry.scale[2]))
-            print("write Proto visual node")
-            print(visualNode.geometry.name)
-            print(visualNode.geometry.scale)
+
 
             proto.write('\n' + (shapeLevel + 3) * indent + ']\n')
             proto.write((shapeLevel + 2) * indent + '}\n')
