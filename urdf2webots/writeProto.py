@@ -154,7 +154,14 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
 
         if link.collision:
             URDFBoundingObject(proto, link, level + 1, boxCollision)
+        # fixing mass
+        if link.inertia.mass is None:
+            print("Link with name {} has no mass!".format(link.name))
+            print("correcting mass = 0.1 \n")
+            link.inertia.mass = 0.001
+
         if link.inertia.mass is not None:
+            print("Link with name {} has a mass = {}!".format(link.name,link.inertia.mass))
             if level == 1 and staticBase:
                 proto.write((level + 1) * indent + '%{ if fields.staticBase.value == false then }%\n')
             proto.write((level + 1) * indent + 'physics Physics {\n')
