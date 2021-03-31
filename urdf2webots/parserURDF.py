@@ -1018,7 +1018,7 @@ def parseGazeboElement(element, parentLink, linkList):
                 if hasElement(noiseElement, 'stddev'):
                     camera.noise = float(noiseElement.getElementsByTagName('stddev')[0].firstChild.nodeValue)
             Camera.list.append(camera)
-            #fish eye
+            #  180 Camera - fish lens, wideanglecamera tag
         elif sensorElement.getAttribute('type') == 'wideanglecamera':
             camera = Camera()
             camera.spherical = "TRUE"
@@ -1047,7 +1047,7 @@ def parseGazeboElement(element, parentLink, linkList):
                 if hasElement(noiseElement, 'stddev'):
                     camera.noise = float(noiseElement.getElementsByTagName('stddev')[0].firstChild.nodeValue)
             Camera.list.append(camera)
-        #rangefinder, almost like camera
+        #depth tag in urdf - rangefinder, almost like camera
         elif sensorElement.getAttribute('type') == 'depth':
             camera = Camera()
             camera.instance = 'RangeFinder'
@@ -1071,6 +1071,32 @@ def parseGazeboElement(element, parentLink, linkList):
                             and imageElement.getElementsByTagName('format')[0].firstChild.nodeValue != 'R8G8B8A8':
                         print('Unsupported "%s" image format, using "R8G8B8A8" instead.' %
                                 str(imageElement.getElementsByTagName('format')[0].firstChild.nodeValue))
+            if hasElement(sensorElement, 'noise'):
+                noiseElement = sensorElement.getElementsByTagName('noise')[0]
+                if hasElement(noiseElement, 'stddev'):
+                    camera.noise = float(noiseElement.getElementsByTagName('stddev')[0].firstChild.nodeValue)
+            Camera.list.append(camera)
+            ##### depth has rgb camera. kinect example
+            camera = Camera()
+            camera.parentLink = parentLink
+            if element.hasAttribute('reference') and checkLink(linkList, element.getAttribute('reference')):
+                camera.parentLink = element.getAttribute('reference')
+            camera.name = sensorElement.getAttribute('name')
+            camera.name = camera.name + "_rgb"
+            if hasElement(sensorElement, 'camera'):
+                cameraElement = sensorElement.getElementsByTagName('camera')[0]
+                if hasElement(cameraElement, 'horizontal_fov'):
+                    camera.fov = float(cameraElement.getElementsByTagName('horizontal_fov')[0].firstChild.nodeValue)
+                if hasElement(cameraElement, 'image'):
+                    imageElement = cameraElement.getElementsByTagName('image')[0]
+                    if hasElement(imageElement, 'width'):
+                        camera.width = int(imageElement.getElementsByTagName('width')[0].firstChild.nodeValue)
+                    if hasElement(imageElement, 'height'):
+                        camera.height = int(imageElement.getElementsByTagName('height')[0].firstChild.nodeValue)
+                    if hasElement(imageElement, 'format') \
+                            and imageElement.getElementsByTagName('format')[0].firstChild.nodeValue != 'R8G8B8A8':
+                        print('Unsupported "%s" image format, using "R8G8B8A8" instead.' %
+                              str(imageElement.getElementsByTagName('format')[0].firstChild.nodeValue))
             if hasElement(sensorElement, 'noise'):
                 noiseElement = sensorElement.getElementsByTagName('noise')[0]
                 if hasElement(noiseElement, 'stddev'):
