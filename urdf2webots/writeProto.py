@@ -157,7 +157,7 @@ def URDFLink(proto, link, level, parentList, childList, linkList, jointList, sen
         # fixing mass
         if link.inertia.mass is None:
             print("Link with name {} has no mass!".format(link.name))
-            print("correcting mass = 0.1 \n")
+            print("correcting mass = 0.001 \n")
             link.inertia.mass = 0.001
 
         if link.inertia.mass is not None:
